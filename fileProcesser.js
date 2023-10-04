@@ -10,13 +10,9 @@ const incorrectFormatDiv = document.getElementById("incorrect-format")
 const xsltProcessor = new XSLTProcessor()
 const xmlReader = new FileReader()
 const xsltReader = new FileReader()
-const xmlParser = new DOMParser()
-const xsltParser = new DOMParser()
+const parser = new DOMParser()
 
 const print = console.log
-
-var xmlDoc;
-var xsltDoc;
 
 
 async function waitForBtns() {
@@ -46,26 +42,24 @@ async function performTransformation(xmlDoc, xsltDoc) {
             xmlReader.addEventListener("load", () => {
                 
                 xmlDoc = xmlReader.result
-                xmlDoc = xmlParser.parseFromString(xmlDoc, "text/xml")
-                print(`LOAD XML ${xmlDoc}`)
+                xmlDoc = parser.parseFromString(xmlDoc, "text/xml")
                 xmlResolve(xmlDoc)
             })
             xmlReader.readAsBinaryString(xmlDoc)
         })
 
         await loadXMLPromise;
-        print("AFTER XML PROMISE")
         const loadXSLPromise = new Promise(async (xslResolve) => {
-            print("ENTERED XSL PROMISE")
+
             xsltReader.addEventListener("load", () => {
-                print("ENTERED XSL LISTENER")
+    
                 xsltDoc = xsltReader.result
     
-                xsltDoc = xsltParser.parseFromString(xsltDoc, "text/xml")
+                xsltDoc = parser.parseFromString(xsltDoc, "text/xml")
                 xsltProcessor.importStylesheet(xsltDoc)
     
                 const transformedXml = xsltProcessor.transformToDocument(xmlDoc)
-    
+
                 const outputElement = document.createElement("div")
     
                 let _ = [moreFilesDiv, incorrectFormatDiv, ...choiceBtns].map((element) => element.remove())
@@ -74,31 +68,13 @@ async function performTransformation(xmlDoc, xsltDoc) {
                 readyHtml = new XMLSerializer().serializeToString(transformedXml)
                 xslResolve(readyHtml)
             })
-            print("AFTER EVENT LISTENER")
+
             xsltReader.readAsBinaryString(xsltDoc)
         })
         await loadXSLPromise;
-        print(`RETURN ${xmlDoc}`)
         resolve([readyHtml, xmlDoc, xsltDoc])
     })
 }
-
-            // let txt = xsl.getElementById("sort")
-            // txt.setAttribute("select", head)
-
-            // if (head === "id") txt.setAttribute("data-type", "number")
-            // else txt.setAttribute("data-type", "text")
-
-            // xsltProcessor.importStylesheet(xsl)
-            // let trans = xsltProcessor.transformToDocument(xmlDoc)
-            // let ready = new XMLSerializer().serializeToString(trans)
-            // outputElement.innerHTML = ready
-            
-
-            // let txt = xml.getElementsByTagName("id")
-            // for (let t of txt) {
-            //     print(t.textContent)
-            // }
 
 
 function checkBothFiles(xmlDoc, xsltDoc) {
@@ -116,6 +92,7 @@ function generateError(element, errorMessage) {
 
 function importData(clickedBtn) {
     return new Promise((resolve) => {
+        let fileDoc
         let input = document.createElement('input');
         input.type = 'file';
         input.accept = ".xml,.xsl"
@@ -131,9 +108,9 @@ function importData(clickedBtn) {
                     generateError(incorrectFormatDiv, "Incorrect Format")
                 }
                 else if (suffix === "xml" || suffix === "xsl") {
-                    xmlDoc = suffix === "xml" || suffix === "xsl" ? files[0] : xmlDoc
+                    fileDoc = suffix === "xml" || suffix === "xsl" ? files[0] : fileDoc
                     clickedBtn.style.backgroundColor = "green"
-                    resolve(xmlDoc)
+                    resolve(fileDoc)
                 }
             }
         })
@@ -141,11 +118,41 @@ function importData(clickedBtn) {
     })
 };
 
+function updateTable(outputElement, xmlDoc, xslDoc, asceding=true){
+    let sortXSL = xslDoc.getElementById("sort")
+    
+    xsltProcessor.importStylesheet(xslDoc)
+    let updatedDOM = xsltProcessor.transformToDocument(xmlDoc)
+
+    body.lastChild.remove()
+    outputElement.innerHTML = new XMLSerializer().serializeToString(updatedDOM)
+
+    body.appendChild(outputElement)
+    for (let th of outputElement.getElementsByTagName("th")) {
+        th.addEventListener("click", () => {
+            sortXSL.setAttribute("select", th.id)
+            if (th.id == "id") {
+                sortXSL.setAttribute("data-type", "number")
+            } else sortXSL.setAttribute("data-type", "string")
+
+            sortXSL.setAttribute("order", asceding ? "asceding" : "descending")
+            updateTable(outputElement, xmlDoc, xslDoc, !asceding)
+        })
+    }
+
+}
+
 async function main() {
     let [xml, xsl] = await waitForBtns();
     let [readyHTML, xmlDoc, xslDoc] = await performTransformation(xml, xsl)
-    // print(xmlDoc)
-    // print(xslDoc)
+
+    
+    const newDoc = parser.parseFromString(readyHTML, "text/html")
+    const outputElement = document.createElement("div")
+    
+    outputElement.innerHTML = new XMLSerializer().serializeToString(newDoc)
+
+    updateTable(outputElement, xmlDoc, xslDoc)
 };
 
 main()

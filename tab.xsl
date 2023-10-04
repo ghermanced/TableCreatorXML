@@ -5,11 +5,11 @@
 <body>
     <table class="table table-sortable" border="1">
         <tr bgcolor="#9acd32">
-      <th>ID</th>
-      <th>First Name</th>
-      <th>Last Name</th>
-      <th>Email</th>
-      <th>Phone</th>
+      <th id="id">ID</th>
+      <th id="firstName">First Name</th>
+      <th id="lastName">Last Name</th>
+      <th id="email">Email</th>
+      <th id="phone">Phone</th>
     </tr>
     <xsl:for-each select="root/element">
     <xsl:sort select="id" data-type="number" id="sort"/>
