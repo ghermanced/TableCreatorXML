@@ -9,11 +9,14 @@ const incorrectFormatDiv = document.getElementById("incorrect-format")
 
 const xsltProcessor = new XSLTProcessor()
 const xmlReader = new FileReader()
+const xsltReader = new FileReader()
 const xmlParser = new DOMParser()
 const xsltParser = new DOMParser()
 
-const xsltReader = new FileReader()
 const print = console.log
+
+var xmlDoc;
+var xsltDoc;
 
 
 async function waitForBtns() {
@@ -35,26 +38,28 @@ async function waitForBtns() {
 }
 
 async function performTransformation(xmlDoc, xsltDoc) {
+    
     return new Promise(async (resolve) => {
         let readyHtml;
-        xmlReader.readAsBinaryString(xmlDoc)
-        xsltReader.readAsBinaryString(xsltDoc)
 
         const loadXMLPromise = new Promise(async (xmlResolve) => {
             xmlReader.addEventListener("load", () => {
                 
                 xmlDoc = xmlReader.result
                 xmlDoc = xmlParser.parseFromString(xmlDoc, "text/xml")
+                print(`LOAD XML ${xmlDoc}`)
                 xmlResolve(xmlDoc)
             })
+            xmlReader.readAsBinaryString(xmlDoc)
         })
 
         await loadXMLPromise;
-
+        print("AFTER XML PROMISE")
         const loadXSLPromise = new Promise(async (xslResolve) => {
+            print("ENTERED XSL PROMISE")
             xsltReader.addEventListener("load", () => {
+                print("ENTERED XSL LISTENER")
                 xsltDoc = xsltReader.result
-                let xsl = xsltParser.parseFromString(xsltDoc, "text/xml")
     
                 xsltDoc = xsltParser.parseFromString(xsltDoc, "text/xml")
                 xsltProcessor.importStylesheet(xsltDoc)
@@ -69,8 +74,11 @@ async function performTransformation(xmlDoc, xsltDoc) {
                 readyHtml = new XMLSerializer().serializeToString(transformedXml)
                 xslResolve(readyHtml)
             })
+            print("AFTER EVENT LISTENER")
+            xsltReader.readAsBinaryString(xsltDoc)
         })
         await loadXSLPromise;
+        print(`RETURN ${xmlDoc}`)
         resolve([readyHtml, xmlDoc, xsltDoc])
     })
 }
@@ -109,7 +117,6 @@ function generateError(element, errorMessage) {
 function importData(clickedBtn) {
     return new Promise((resolve) => {
         let input = document.createElement('input');
-        let fileDoc
         input.type = 'file';
         input.accept = ".xml,.xsl"
         input.addEventListener("change", () => {
@@ -124,9 +131,9 @@ function importData(clickedBtn) {
                     generateError(incorrectFormatDiv, "Incorrect Format")
                 }
                 else if (suffix === "xml" || suffix === "xsl") {
-                    fileDoc = suffix === "xml" || suffix === "xsl" ? files[0] : fileDoc
+                    xmlDoc = suffix === "xml" || suffix === "xsl" ? files[0] : xmlDoc
                     clickedBtn.style.backgroundColor = "green"
-                    resolve(fileDoc)
+                    resolve(xmlDoc)
                 }
             }
         })
@@ -137,7 +144,8 @@ function importData(clickedBtn) {
 async function main() {
     let [xml, xsl] = await waitForBtns();
     let [readyHTML, xmlDoc, xslDoc] = await performTransformation(xml, xsl)
-
+    // print(xmlDoc)
+    // print(xslDoc)
 };
 
 main()
