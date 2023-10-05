@@ -1,11 +1,8 @@
-import { xmlToJson } from "./converter.js"
-// import { sortTableByColumn } from "./sortTable.js"
-
 const tableHeadings = ["id", "firstName", "lastName", "email", "phone"]
-const choiceBtns = document.getElementsByClassName("choice")
-const body = document.body
-const moreFilesDiv = document.getElementById("too-many-files")
-const incorrectFormatDiv = document.getElementById("incorrect-format")
+const choiceBtns = $(document).find(".choice")
+const body = $(document.body)
+const moreFilesDiv = $(document).find(".too-many-files")
+const incorrectFormatDiv = $(document).find(".incorrect-format")
 
 const xsltProcessor = new XSLTProcessor()
 const xmlReader = new FileReader()
@@ -16,21 +13,18 @@ const print = console.log
 
 
 async function waitForBtns() {
-    return new Promise(async (resolve) => {
-        let files = []
-        for (let btn of choiceBtns) {
-            const clickPromise = new Promise(async (btnResolve) => {
-            btn.addEventListener("click", async () => {
-                files.push(await importData(btn));
-                // print(`wait:${res}`);
-                btnResolve(files);
+    const files = [];
+  
+    for (const btn of choiceBtns) {
+        files.push(await new Promise(async (btnResolve) => {
+            $(btn).on("click", async () => {
+                const file = await importData(btn);
+                btnResolve(file);
             });
-            });
-    
-            await clickPromise;
-        }
-        resolve(files);
-    });
+        }));
+    }
+  
+    return files;
 }
 
 async function performTransformation(xmlDoc, xsltDoc) {
@@ -42,7 +36,7 @@ async function performTransformation(xmlDoc, xsltDoc) {
             xmlReader.addEventListener("load", () => {
                 
                 xmlDoc = xmlReader.result
-                xmlDoc = parser.parseFromString(xmlDoc, "text/xml")
+                xmlDoc = $.parseXML(xmlDoc)
                 xmlResolve(xmlDoc)
             })
             xmlReader.readAsBinaryString(xmlDoc)
@@ -55,15 +49,15 @@ async function performTransformation(xmlDoc, xsltDoc) {
     
                 xsltDoc = xsltReader.result
     
-                xsltDoc = parser.parseFromString(xsltDoc, "text/xml")
+                xsltDoc = $.parseXML(xsltDoc)
                 xsltProcessor.importStylesheet(xsltDoc)
     
                 const transformedXml = xsltProcessor.transformToDocument(xmlDoc)
 
-                const outputElement = document.createElement("div")
+                const outputElement = $("<div>")
     
                 let _ = [moreFilesDiv, incorrectFormatDiv, ...choiceBtns].map((element) => element.remove())
-                body.appendChild(outputElement)
+                $("body").append(outputElement)
     
                 readyHtml = new XMLSerializer().serializeToString(transformedXml)
                 xslResolve(readyHtml)
@@ -84,20 +78,23 @@ function checkBothFiles(xmlDoc, xsltDoc) {
 };
 
 function generateError(element, errorMessage) {
-    body.lastChild.remove()
-    body.appendChild(element)
-    element.textContent = errorMessage
-    element.style.display = "block"
+    $(document.body).children().last().remove();
+    $(document.body).append(element);
+    element.text(errorMessage);
+    element.css("display", "block");
 };
 
 function importData(clickedBtn) {
     return new Promise((resolve) => {
         let fileDoc
-        let input = document.createElement('input');
-        input.type = 'file';
-        input.accept = ".xml,.xsl"
-        input.addEventListener("change", () => {
-            let files = Array.from(input.files);
+        let input = $("<input>")
+        input.attr({
+            "type": "file",
+            "accept": ".xml,.xsl"
+        })
+
+        input.on("change", () => {
+            let files = Array.from(input[0].files);
             let suffix = files[0].name.split(".")[1]
     
             if (files.length > 1) {
@@ -114,31 +111,35 @@ function importData(clickedBtn) {
                 }
             }
         })
-        input.click();
+        input.trigger("click");
     })
 };
 
-function updateTable(outputElement, xmlDoc, xslDoc, asceding=true){
-    let sortXSL = xslDoc.getElementById("sort")
-    
+function updateTable(outputElement, xmlDoc, xslDoc, asceding=true){ 
+    let sortXSL = $(xslDoc).find("#sort")
+
     xsltProcessor.importStylesheet(xslDoc)
     let updatedDOM = xsltProcessor.transformToDocument(xmlDoc)
 
-    body.lastChild.remove()
-    outputElement.innerHTML = new XMLSerializer().serializeToString(updatedDOM)
+    $(document.body).children().last().remove()
+    outputElement.html(new XMLSerializer().serializeToString(updatedDOM))
 
-    body.appendChild(outputElement)
-    for (let th of outputElement.getElementsByTagName("th")) {
-        th.addEventListener("click", () => {
-            sortXSL.setAttribute("select", th.id)
-            if (th.id == "id") {
-                sortXSL.setAttribute("data-type", "number")
-            } else sortXSL.setAttribute("data-type", "string")
+    $(document.body).append(outputElement)
 
-            sortXSL.setAttribute("order", asceding ? "asceding" : "descending")
-            updateTable(outputElement, xmlDoc, xslDoc, !asceding)
+    outputElement.find("th").click((e) => {
+        let th = $(e.currentTarget)
+        let dataType
+        if (th.attr("id") == "id") {
+            dataType = "number"
+        } else dataType = "string"
+
+        sortXSL.attr({
+            "select": th.attr("id"),
+            "data-type": dataType,
+            "order": asceding ? "ascending" : "descending",
         })
-    }
+        updateTable(outputElement, xmlDoc, xslDoc, !asceding)
+    })
 
 }
 
@@ -148,9 +149,9 @@ async function main() {
 
     
     const newDoc = parser.parseFromString(readyHTML, "text/html")
-    const outputElement = document.createElement("div")
+    const outputElement = $("<div></div>")
     
-    outputElement.innerHTML = new XMLSerializer().serializeToString(newDoc)
+    outputElement.html(new XMLSerializer().serializeToString(newDoc))
 
     updateTable(outputElement, xmlDoc, xslDoc)
 };

@@ -1,3 +1,6 @@
 test.js
 sortTable.js
 .vscode
+node_modules
+package-lock.json
+package.json
