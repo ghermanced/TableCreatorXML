@@ -13,13 +13,15 @@
     </tr>
     <xsl:for-each select="root/element">
     <xsl:sort select="id" data-type="number" id="sort"/>
+    <xsl:if test="id" id="filter">
     <tr>
         <td><xsl:value-of select="id" /></td>
         <td><xsl:value-of select="firstName" /></td>
         <td><xsl:value-of select="lastName" /></td>
-      <td><xsl:value-of select="email" /></td>
-      <td><xsl:value-of select="phone" /></td>
-    </tr>
+        <td><xsl:value-of select="email" /></td>
+        <td><xsl:value-of select="phone" /></td>
+      </tr>
+    </xsl:if>
     </xsl:for-each>
     </table>
 </body>

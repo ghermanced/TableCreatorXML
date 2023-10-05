@@ -4,6 +4,12 @@ const body = $(document.body)
 const moreFilesDiv = $(document).find(".too-many-files")
 const incorrectFormatDiv = $(document).find(".incorrect-format")
 
+const filterInput = $("<input>")
+const findBtn = $("<button>")
+filterInput.attr("style", "display:none")
+findBtn.attr("style", "display:none")
+body.prepend(filterInput, findBtn)
+
 const xsltProcessor = new XSLTProcessor()
 const xmlReader = new FileReader()
 const xsltReader = new FileReader()
@@ -36,7 +42,7 @@ async function performTransformation(xmlDoc, xsltDoc) {
             xmlReader.addEventListener("load", () => {
                 
                 xmlDoc = xmlReader.result
-                xmlDoc = $.parseXML(xmlDoc)
+                xmlDoc = parser.parseFromString(xmlDoc, "text/xml")
                 xmlResolve(xmlDoc)
             })
             xmlReader.readAsBinaryString(xmlDoc)
@@ -49,7 +55,7 @@ async function performTransformation(xmlDoc, xsltDoc) {
     
                 xsltDoc = xsltReader.result
     
-                xsltDoc = $.parseXML(xsltDoc)
+                xsltDoc = parser.parseFromString(xsltDoc, "text/xml")
                 xsltProcessor.importStylesheet(xsltDoc)
     
                 const transformedXml = xsltProcessor.transformToDocument(xmlDoc)
@@ -115,7 +121,7 @@ function importData(clickedBtn) {
     })
 };
 
-function updateTable(outputElement, xmlDoc, xslDoc, asceding=true){ 
+function updateTable(outputElement, xmlDoc, xslDoc, asceding=true){
     let sortXSL = $(xslDoc).find("#sort")
 
     xsltProcessor.importStylesheet(xslDoc)
@@ -141,6 +147,28 @@ function updateTable(outputElement, xmlDoc, xslDoc, asceding=true){
         updateTable(outputElement, xmlDoc, xslDoc, !asceding)
     })
 
+    filterData(outputElement, xmlDoc, xslDoc)
+}
+
+function filterData(outputElement, xmlDoc, xslDoc) {
+    
+    filterInput.attr({
+        "placeholder": "Find",
+        "style": "display:inline"
+    })
+
+    findBtn.attr("style", "display:inline")
+    findBtn.text("Find")
+
+    findBtn.on("click", () => {
+        let checkedVal = filterInput.val()
+        if (checkedVal.trim() === "") {
+            $(xslDoc).find("#filter").attr("test", "id")
+        }
+        $(xslDoc).find("#filter").attr("test", `descendant::*[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '${checkedVal}')]`)
+
+        updateTable(outputElement, xmlDoc, xslDoc)
+    })
 }
 
 async function main() {
