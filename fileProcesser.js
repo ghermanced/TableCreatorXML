@@ -6,9 +6,26 @@ const incorrectFormatDiv = $(document).find(".incorrect-format")
 
 const filterInput = $("<input>")
 const findBtn = $("<button>")
-filterInput.attr("style", "display:none")
-findBtn.attr("style", "display:none")
-body.prepend(filterInput, findBtn)
+const findWrapper = $("<div>")
+const addButton = $(document).find("#add-btn")
+const userForm = $(document).find("#user-form")
+body.prepend(findWrapper)
+findWrapper.attr("style", "display:none;margin-bottom: 10px")
+findWrapper.append(filterInput, findBtn)
+
+const userInfo = $("<p>")
+
+class SelectedUser {
+    constructor(id, firstName, lastName, email, phone) {
+        this.id = id
+        this.name = [lastName, firstName].join(" ")
+        this.email = email
+        this.phone = phone
+    }
+    getInfo() {
+        return `ID: ${this.id} -- Name: ${this.name} -- Email: ${this.email} -- Phone: ${this.phone}`
+    }
+}
 
 const xsltProcessor = new XSLTProcessor()
 const xmlReader = new FileReader()
@@ -147,11 +164,46 @@ function updateTable(outputElement, xmlDoc, xslDoc, asceding=true){
         updateTable(outputElement, xmlDoc, xslDoc, !asceding)
     })
 
+    outputElement.find("tr").click((e) => {
+        let info = e.currentTarget.textContent.split("\n").filter(value => value != '')
+        let newUser = new SelectedUser(...info)
+        userInfo.text(newUser.getInfo())
+        body.append(userInfo)
+        newUser = null
+    })
+
+    $(document).find(".input-user").attr("style", "display: block;")
+
+    addButton.attr("style", "display: inline")
+    
+    if (addButton.attr("listener") !== "true"){
+        addButton.on("click", (e) => {
+            e.preventDefault()
+            addButton.attr("listener", "true")
+            const newRecord = {}
+            let data = $("form").serializeArray()
+            print(data)
+            data.forEach(item => {
+                newRecord[item.name] = item.value
+            })
+            $(xmlDoc).find("root").prepend(createXMLElement(newRecord))
+            updateTable(outputElement, xmlDoc, xslDoc)
+        })
+    }
     filterData(outputElement, xmlDoc, xslDoc)
 }
 
+function createXMLElement(record) {
+    let currentString = "<element>"
+    for (const [key, val] of Object.entries(record)) {
+        currentString += `<${key}>${val}</${key}>`
+    }
+    return currentString += "</element>"
+}
+
 function filterData(outputElement, xmlDoc, xslDoc) {
-    
+    findWrapper.attr("style", "display:block;margin-bottom:10px")
+
     filterInput.attr({
         "placeholder": "Find",
         "style": "display:inline"
@@ -175,12 +227,12 @@ async function main() {
     let [xml, xsl] = await waitForBtns();
     let [readyHTML, xmlDoc, xslDoc] = await performTransformation(xml, xsl)
 
-    
     const newDoc = parser.parseFromString(readyHTML, "text/html")
     const outputElement = $("<div></div>")
+    const addButton = $(document).find(".add-btn")
     
     outputElement.html(new XMLSerializer().serializeToString(newDoc))
-
+    
     updateTable(outputElement, xmlDoc, xslDoc)
 };
 

@@ -9,11 +9,21 @@
 <body>
     <button class="choice" id="xml"> Load XML</button>
     <button class="choice" id="xsl">Load XSLT</button>
+    <form action="" id="user-form">
+        <input type="text" name="id" class="input-user" type="text" style="display: none;" placeholder="ID">
+        <input type="text" name="firstName" class="input-user" type="text" style="display: none;" placeholder="First Name">
+        <input type="text" name="lastName" class="input-user" type="text" style="display: none;" placeholder="Last Name">
+        <input type="text" name="email" class="input-user" type="text" style="display: none;" placeholder="Email">
+        <input type="text" name="phone" class="input-user" type="text" style="display: none;" placeholder="Phone">
+        <button id="add-btn" type="submit" style="display: none;">Add</button>
+    </form>
+
     <div class="warning" id="too-many-files" style="display: none; color: red;"></div>
     <div class="warning" id="incorrect-format" style="display: none; color: red;"></div>
     <script src="config.js" type="module"></script>
     <!-- <script src="converter.js" type="module"></script> -->
     <script src="fileProcesser.js" type="module"></script>
     <!-- <script src="sortTable.js" type="module"></script> -->
+    <!-- <script src="test.js" type="module"></script> -->
 </body>
 </html>
