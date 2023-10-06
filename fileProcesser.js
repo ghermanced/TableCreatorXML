@@ -9,9 +9,32 @@ const findBtn = $("<button>")
 const findWrapper = $("<div>")
 const addButton = $(document).find("#add-btn")
 const userForm = $(document).find("#user-form")
+
+const prevBtn = $("<button>")
+const nextBtn = $("<button>")
+const currentPageWrapper = $("<span>")
+
+var currentPage = 1
+
+prevBtn.html("Previous")
+nextBtn.html("Next")
 body.prepend(findWrapper)
 findWrapper.attr("style", "display:none;margin-bottom: 10px")
 findWrapper.append(filterInput, findBtn)
+
+nextBtn.on("click", () => {
+    print("hello")
+})
+
+prevBtn.on("click", () => {
+    --currentPage
+})
+
+nextBtn.on("click", () => {
+    ++currentPage
+    print(currentPage)
+})
+
 
 const userInfo = $("<p>")
 
@@ -81,8 +104,9 @@ async function performTransformation(xmlDoc, xsltDoc) {
     
                 let _ = [moreFilesDiv, incorrectFormatDiv, ...choiceBtns].map((element) => element.remove())
                 $("body").append(outputElement)
-    
+                
                 readyHtml = new XMLSerializer().serializeToString(transformedXml)
+
                 xslResolve(readyHtml)
             })
 
@@ -138,6 +162,10 @@ function importData(clickedBtn) {
     })
 };
 
+function pagination() {
+
+}
+
 function updateTable(outputElement, xmlDoc, xslDoc, asceding=true){
     let sortXSL = $(xslDoc).find("#sort")
 
@@ -190,6 +218,56 @@ function updateTable(outputElement, xmlDoc, xslDoc, asceding=true){
             updateTable(outputElement, xmlDoc, xslDoc)
         })
     }
+
+    
+    
+    let elementsPerPage = 10
+    let rowsInTable = $(outputElement).find("tr")
+    let totalRows = rowsInTable.length
+    let totalPages = Math.ceil(totalRows / elementsPerPage)
+    let header = rowsInTable[0]
+
+
+    let startIndex = (currentPage - 1) * elementsPerPage
+    let endIndex = currentPage * elementsPerPage
+
+    $(outputElement).append(prevBtn)
+    $(outputElement).append(currentPageWrapper.html(currentPage))
+    $(outputElement).append(nextBtn)
+
+    print("Current page: "+ currentPage)
+    print("Total pages: "+ totalPages)
+    if (currentPage == 1) {
+        prevBtn.attr("disabled", true)
+    }
+    else if (currentPage == totalPages) {
+        print(currentPage)
+        print(totalPages)
+        nextBtn.attr("disabled", true)
+    }
+    else {
+        nextBtn.attr("disabled", false)
+        prevBtn.attr("disabled", false)
+    }
+
+    prevBtn.on("click", () => {
+        --currentPage
+        updateTable(outputElement, xmlDoc, xslDoc)
+    })
+    
+    nextBtn.on("click", () => {
+        ++currentPage
+        updateTable(outputElement, xmlDoc, xslDoc)
+    })
+    
+
+    for (let i=1; i<totalRows;i++){
+        if(i < startIndex || i > endIndex){
+            $(outputElement).find(rowsInTable[i]).hide()
+        }
+    }
+
+
     filterData(outputElement, xmlDoc, xslDoc)
 }
 
@@ -231,7 +309,22 @@ async function main() {
     const outputElement = $("<div></div>")
     const addButton = $(document).find(".add-btn")
     
+    
     outputElement.html(new XMLSerializer().serializeToString(newDoc))
+    
+    prevBtn.on("click", () => {
+        --currentPage
+    })
+    
+    nextBtn.on("click", () => {
+        ++currentPage
+        print(currentPage)
+    })
+    
+
+    $(outputElement).append(prevBtn)
+    $(outputElement).append(currentPageWrapper.html(currentPage))
+    $(outputElement).append(nextBtn)
     
     updateTable(outputElement, xmlDoc, xslDoc)
 };
